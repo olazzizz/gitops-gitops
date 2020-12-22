@@ -18,19 +18,19 @@ pipeline {
       }
     }
     stage ('Apply resources') {
+      when {
+        branch 'master'
+      }
       steps {
-        when {
-          branch 'master'
-        }
         sh 'oc apply -k config'
         sh './wait_oauth.sh'
       }
     }
     stage ('Verify test user') {
+      when {
+        branch 'master'
+      }
       steps {
-        when {
-          branch 'master'
-        }
         sh 'oc login https://kubernetes.default.svc:443 -u testuser -p redhat123 --insecure-skip-tls-verify'
         sh 'oc new-project test-testuser || true'
       }
