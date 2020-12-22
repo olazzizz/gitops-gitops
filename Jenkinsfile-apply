@@ -1,0 +1,39 @@
+pipeline {
+  triggers {
+    pollSCM ( 'H/3 * * * *' )
+  }
+  options {
+    buildDiscarder (logRotator (numToKeepStr: '5'))
+    disableConcurrentBuilds ()
+  }
+  agent {
+    node {
+      label 'nodejs'
+    }
+  }
+  stages {
+    stage ('Validate configuration resources') {
+      steps {
+        sh 'oc apply -k config --dry-run --validate'
+      }
+    }
+    stage ('Apply resources') {
+      steps {
+        when {
+          branch 'master'
+        }
+        sh 'oc apply -k config'
+        sh './wait_oauth.sh'
+      }
+    }
+    stage ('Verify test user') {
+      steps {
+        when {
+          branch 'master'
+        }
+        sh 'oc login https://kubernetes.default.svc:443 -u testuser -p redhat123 --insecure-skip-tls-verify'
+        sh 'oc new-project test-testuser || true'
+      }
+    }
+  }
+}
